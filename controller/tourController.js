@@ -38,16 +38,18 @@ exports.getAllTour = async (req, res) => {
 
     // MAKE BETTER
     /*
-    if we pass req.query for filtering and also for pagination values.
-    then we should not use query-object directly.
+      if we pass req.query for filtering and also for pagination values.
+      then we should not use query-object directly.
      */
 
-    // BUILD QUERY
+    console.log(req.query);
+    //BUILD QUERY
+    // 1A) Filtering
     const queryObj = { ...req.query };
-    const excludeField = ["page", "sort", "limit", "fields"];
+    const excludeField = ["sort", "fields", "page", "limit"];
     excludeField.map((el) => delete queryObj[el]);
 
-    // ADVANCE QUERY
+    // 1B) Advance Filtering // ?difficulty=easy&duration[gte]=5
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(lt|lte|gt|gte)\b/g, (match) => `$${match}`);
 
@@ -55,8 +57,43 @@ exports.getAllTour = async (req, res) => {
     // to
     // { difficulty: 'easy', duration: { $gte: '5' } }
 
-    const query = Tour.find(JSON.parse(queryStr));
+    let query = Tour.find(JSON.parse(queryStr)); // return query instance //that we can chain more method.
 
+    // 2) SORTING // ?sort=-price
+    if (req.query.sort) {
+      // query.sort(req.query.sort); //sort('price') //sort('-price') -for descending
+
+      //sort by multiple field //sort('price ratingAverage')
+      // { sort: 'price,ratingAverage' }
+      // to
+      // { sort: 'price ratingAverage' }
+
+      const sortBy = req.query.sort.split(",").join(" ");
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort("-createdAt");
+    }
+
+    // 3) Fields Filtering // ?fields=name,price
+    if (req.query.fields) {
+      const fields = req.query.fields.split(",").join(" ");
+      query = query.select(fields);
+    } else {
+      query = query.select("-__v"); //__v creat by mongo we can exclude by default.
+    }
+
+    // 4) Pagination // ?page=2&limit20
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skip = (page - 1) * limit; // previous-page * limit
+
+    query = query.skip(skip).limit(limit);
+
+    if(req.query.page){
+      const numOfDoc = await Tour.countDocuments();
+      if(skip >= numOfDoc)
+        throw new Error('This page dose not exits');
+    }
     //EXECUTE QUERY
     const tours = await query;
 
