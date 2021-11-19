@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify')
 
 const tourSchema = new mongoose.Schema({
   name: {
@@ -7,6 +8,7 @@ const tourSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  slug: String,
   duration: {
     type: Number,
     required: [true, 'A tour must have a duration']
@@ -51,8 +53,49 @@ const tourSchema = new mongoose.Schema({
     default: Date.now(),
     select: false
   },
-  startDates: [Date]
+  startDates: [Date],
+  secretTour: Boolean,
+}, {
+  toJSON: {virtuals: true},
+  toObject: {virtuals: true}
 })
+
+tourSchema.virtual('durationWeek').get(function() {
+  return this.duration / 7;
+})
+
+// DOCUMENT MIDDLEWARE: runs before only the .save() and .create()
+// .this point to current document
+tourSchema.pre('save', function(next) {
+  this.slug = slugify(this.name, {lower: true});
+  
+  next();
+})
+
+// QUERY MIDDLEWARE: .this point to current query
+tourSchema.pre(/^find/, function(next){ // if start with find (find, findOne, findOneAndUpdate.....)
+// tourSchema.pre('find', function(next){
+  this.find({secretTour: {$ne: true}})
+  this.start = Date.now();
+
+  next();
+})
+
+tourSchema.post(/^find/, function(docs, next) {
+  console.log('find query takes:', Date.now() - this.start, "milliseconds");
+  next();
+})
+
+//AGGREGATE MIDDLEWARE // .this point to aggregate
+tourSchema.pre('aggregate', function(next){
+  // console.log(this.pipeline()); //pipeline array
+
+  // set another $match in pipeline.
+  this.pipeline().unshift({$match: { secretTour: {$ne: true}}});
+
+  next();
+})
+
 
 const Tour = mongoose.model('Tour', tourSchema);
 
