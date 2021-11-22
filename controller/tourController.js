@@ -1,5 +1,7 @@
 const Tour = require("../models/tourModel");
 const APIFeature = require("../utils/apiFeature");
+const AppError = require("../utils/appError");
+const catchAsync = require("../utils/catchAsync");
 
 //middleware
 exports.cheapTour = (req, res, next) => {
@@ -59,24 +61,18 @@ exports.getAllTour = async (req, res) => {
   }
 };
 
-exports.getTour = async (req, res) => {
-  try {
+exports.getTour = catchAsync(async (req, res, next) => {
     const tour = await Tour.findById(req.params.id);
-
+    if(!tour){
+      return next(new AppError("No tour found", 404))
+    }
     res.status(200).json({
       status: "success",
       body: {
         data: tour,
       },
     });
-
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err.message,
-    });
-  }
-};
+});
 
 exports.getTourStar = async (req, res) => {
   try {

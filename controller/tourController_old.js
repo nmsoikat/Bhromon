@@ -1,14 +1,15 @@
 const Tour = require("../models/tourModel");
+const catchAsync = require("../utils/catchAsync");
 
 //middleware
 exports.cheapTour = (req, res, next) => {
   // ?limit=5&sort=-ratingsAverage,price&fields=name,price
-  req.query.limit='5';
-  req.query.sort='price,-ratingsAverage';
-  req.query.fields='name,price';
+  req.query.limit = "5";
+  req.query.sort = "price,-ratingsAverage";
+  req.query.fields = "name,price";
 
   next();
-}
+};
 
 exports.createTour = async (req, res) => {
   try {
@@ -30,7 +31,6 @@ exports.createTour = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllTour = async (req, res) => {
   try {
@@ -100,10 +100,9 @@ exports.getAllTour = async (req, res) => {
 
     query = query.skip(skip).limit(limit);
 
-    if(req.query.page){
+    if (req.query.page) {
       const numOfDoc = await Tour.countDocuments();
-      if(skip >= numOfDoc)
-        throw new Error('This page dose not exits');
+      if (skip >= numOfDoc) throw new Error("This page dose not exits");
     }
 
     //EXECUTE QUERY
@@ -125,23 +124,16 @@ exports.getAllTour = async (req, res) => {
   }
 };
 
-exports.getTour = async (req, res) => {
-  try {
-    const tour = await Tour.findById(req.params.id);
+exports.getTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findById(req.params.id);
 
-    res.status(200).json({
-      status: "success",
-      body: {
-        data: tour,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err.message,
-    });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    body: {
+      data: tour,
+    },
+  });
+});
 
 exports.updateTour = async (req, res) => {
   try {
@@ -168,8 +160,8 @@ exports.updateTour = async (req, res) => {
   }
 };
 
-exports.deleteTour = async (req, res) => {
-  try {
+exports.deleteTour = catchAsync(async (req, res, next) => {
+  
     await Tour.findByIdAndDelete(req.params.id);
 
     res.status(204).json({
@@ -178,10 +170,4 @@ exports.deleteTour = async (req, res) => {
         data: null,
       },
     });
-  } catch (err) {
-    res.status(400).json({
-      status: "fail",
-      message: err.message,
-    });
-  }
-};
+});
