@@ -2,6 +2,15 @@ const dotenv = require('dotenv')
 const mongoose = require('mongoose');
 
 dotenv.config({ path: './config.env' })
+
+
+// handle uncaught exception
+process.on('uncaughtException', err => {
+  console.log(err.name, err.message);
+  console.log('UNCAUGHT EXCEPTION. shouting down...');
+  process.exit(1);
+})
+
 const app = require('./app')
 
 const DB = process.env.DATABASE.replace('<PASSWORD>', process.env.DATABASE_PASSWORD);
@@ -22,7 +31,7 @@ const server = app.listen(port, () => {
   console.log('Server is running on 8000');
 })
 
-// all promise rejection handle
+// all promise rejection handle // for asynchronous code
 process.on('unhandledRejection', err => {
   console.log(err.name, err.message);
   console.log('UNHANDLED REJECTION. shouting down...');
