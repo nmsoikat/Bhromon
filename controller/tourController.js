@@ -13,8 +13,8 @@ exports.cheapTour = (req, res, next) => {
   next();
 };
 
-exports.createTour = async (req, res) => {
-  try {
+exports.createTour = catchAsync(async (req, res) => {
+  
     // const newTour = new Tour({})
     // newTour.save();
 
@@ -26,13 +26,7 @@ exports.createTour = async (req, res) => {
         newTour,
       },
     });
-  } catch (err) {
-    res.status(400).send({
-      status: "failed",
-      message: err.message,
-    });
-  }
-};
+});
 
 exports.getAllTour = async (req, res) => {
   try {
