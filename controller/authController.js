@@ -1,3 +1,4 @@
+const {promisify} = require('util')
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
@@ -16,7 +17,8 @@ exports.signupUser = catchAsync(async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
-    confirmPassword: req.body.confirmPassword
+    confirmPassword: req.body.confirmPassword,
+    changePasswordAt: req.body.changePasswordAt
   })
 
   // after create an new account auto login
@@ -59,3 +61,39 @@ exports.loginUser = catchAsync(async(req, res, next) => {
   })
 
 })
+
+exports.protect = catchAsync(async (req, res, next)=> {
+  // 1) Getting token and check of it's there
+  let token;
+  if(req.headers.authorization && req.headers.authorization.startsWith("Bearer")){
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if(!token){
+    return next(new AppError('Your are not logged in!. Please login to get access.'));
+  }
+
+  
+  // 2) Verification Token // if some one manipulate the token
+  // callback function call after complete the verification.
+   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  //  console.log(decoded);
+  
+
+  // 3) Check if user still exist // user deleted after login
+  const freshUser = await User.findById({_id: decoded.id});
+  if(!freshUser){
+    return next(new AppError("The user belonging to this token dose no longer exist."))
+  }
+
+  
+  // 4) Check if user change password after the token  was issued.
+  // error password change after login.
+  if(freshUser.changePasswordAfter(decoded.iat)){
+    return next(new AppError("User recently changed password! Please login again.", 401));
+  }
+
+  //GRANT ACCESS TO PROTECTED ROUTE.
+  req.user = freshUser;
+  next();
+}) 

@@ -33,6 +33,8 @@ const userSchema = new mongoose.Schema({
     select: false
   },
 
+  
+  
   confirmPassword: {
     type: String,
     required: [true, 'Please confirm password'],
@@ -44,7 +46,9 @@ const userSchema = new mongoose.Schema({
       },
       message: "Password are not same!"
     }
-  }
+  },
+
+  changePasswordAt: Date,
 })
 
 
@@ -70,6 +74,20 @@ userSchema.methods.correctPassword = async function(candidatePassword, userPassw
   // this.password can not access because of password-field{select: false} in here
 
   return await bcrypt.compare(candidatePassword, userPassword)
+}
+
+// 
+userSchema.methods.changePasswordAfter = function(JWTTimeStamp){
+
+  if(this.changePasswordAt){
+    //timeStamp.getTime() // return milliseconds
+    const changedTimeStamp = this.changePasswordAt.getTime() / 1000;
+
+    return JWTTimeStamp < changedTimeStamp;
+  }
+
+  // FALSE means NOT changed.
+  return false;
 }
 
 const User = mongoose.model('User', userSchema)
