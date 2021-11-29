@@ -26,14 +26,18 @@ const userSchema = new mongoose.Schema({
     default: '/public/img/default-profile.jpg'
   },
 
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user'
+  },
+
   password: {
     type: String,
     required: [true, "Please provide your password"],
     minlength: [8, "A user password musth have more or equal than 8 character"],
     select: false
   },
-
-  
   
   confirmPassword: {
     type: String,
