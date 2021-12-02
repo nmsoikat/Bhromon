@@ -57,9 +57,15 @@ const userSchema = new mongoose.Schema({
 
   passwordResetToken: String,
   passwordResetExpire: Date,
+
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  }
 })
 
-
+// Document Middleware:
 userSchema.pre('save', async function(next) {
   // only run this function if password was actually modified
   if(!this.isModified('password')){
@@ -83,7 +89,18 @@ userSchema.pre('save', async function(next) {
   next()
 })
 
-// instance method:  all document available from current collection
+
+// Query Middleware: .this point to current query obj
+userSchema.pre(/^find/, function(next) {
+  // this.find({active: true})
+  this.find({active: {$ne: false}})
+
+  next();
+})
+
+
+// Instance Method:  
+// all document available from current collection
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
 
   // this.password can not access because of password-field{select: false} in here
@@ -104,7 +121,6 @@ userSchema.methods.changePasswordAfter = function(JWTTimeStamp){
   // FALSE means NOT changed.
   return false;
 }
-
 
 // generate token using crypto. encrypt and save to db 
 userSchema.methods.createPasswordResetToken = function () {
