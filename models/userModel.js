@@ -83,7 +83,7 @@ userSchema.pre('save', async function(next) {
 
 // store when password has changed. 
 userSchema.pre('save', async function(next) {
-  if(!this.isModified('password') || !this.isNew) return next();
+  if(!this.isModified('password') || this.isNew) return next();
 
   this.changePasswordAt = Date.now() - 1000; // -1s for make sure token has been created after password change.
   next()
