@@ -4,3 +4,5 @@
 
 400 // bade request
 401 // unauthorize
+
+429 // too many request
