@@ -15,12 +15,15 @@ const signToken = (id) => {
 const createSendToken = (user, statusCode, res) => {
     const token = signToken(user._id)
 
+    
     // set HTTP Only Cookie
     const cookieOptions = {
       expire: new Date( Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
-      httpOnly: true
+      httpOnly: true // can not accessed or modified in any way by the browser //in order to protect cross-site scripting attack
+      //browser will receive the cookie and store it and then,automatically send it along with every request
     }
     if(process.env.NODE_ENV === 'production'){
+      //the cookie only be sent on an encrypted connection
       cookieOptions.secure = true // it is work only for https;
     }
     res.cookie('jwt', token, cookieOptions);
